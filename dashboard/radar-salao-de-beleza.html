@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Radar salão de beleza — IntentRadar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7EEF0;--panel:#FFFFFF;--ink:#2B1631;--muted:#76607C;--line:#E7D5DB;
+  --lacquer:#C2185B;--foil:#9A6A17;--mint:#1F7A68;--soft:#F1E2E7;
+  --radar:#24122A;--radar-ink:#F6E7EE;--blip-hot:#FF5C93;--blip-warm:#E8B45A;--blip-cool:#9C86A3;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#170D1B;--panel:#221427;--ink:#F5E8EE;--muted:#B49BB9;--line:#3A2540;
+  --lacquer:#FF5C93;--foil:#E3B25C;--mint:#5CC9AE;--soft:#2C1932;
+}}
+:root[data-theme="dark"]{--bg:#170D1B;--panel:#221427;--ink:#F5E8EE;--muted:#B49BB9;--line:#3A2540;--lacquer:#FF5C93;--foil:#E3B25C;--mint:#5CC9AE;--soft:#2C1932}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 64px}
+h1,h2,h3{font-family:Unbounded,Manrope,system-ui,sans-serif;font-weight:700;letter-spacing:-.01em;margin:0}
+h1{font-size:clamp(1.9rem,4.4vw,3rem);line-height:1.05}
+h2{font-size:1.15rem}
+h3{font-size:.98rem;font-weight:500}
+p{margin:0}
+.muted{color:var(--muted)}
+.lede{max-width:62ch;margin-top:12px;font-size:1.05rem}
+.demo-note{margin-top:18px;padding:10px 14px;border-left:3px solid var(--foil);background:var(--soft);border-radius:0 8px 8px 0;font-size:.92rem;max-width:72ch}
+.top{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:36px;margin-top:30px;align-items:start}
+@media (max-width:860px){.top{grid-template-columns:1fr}}
+/* radar */
+.radar-box{display:flex;flex-direction:column;align-items:center;gap:10px}
+.radar{position:relative;width:100%;max-width:470px;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 50%,#3B1D44 0%,var(--radar) 72%);box-shadow:0 0 0 6px var(--soft),0 30px 60px -30px rgba(43,22,49,.6);overflow:hidden}
+.radar svg{position:absolute;inset:0;width:100%;height:100%}
+.sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg 290deg,rgba(255,92,147,.0) 290deg,rgba(255,92,147,.38) 359deg,rgba(255,170,200,.75) 360deg);animation:spin 6s linear infinite;pointer-events:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.blip{transform-box:fill-box;transform-origin:center;animation:ping 6s linear infinite;cursor:pointer;outline:none}
+.blip:focus-visible{stroke:#fff;stroke-width:2}
+@keyframes ping{0%{transform:scale(1.9);opacity:1}25%{transform:scale(1);opacity:.75}100%{transform:scale(1);opacity:.6}}
+.radar-label{fill:var(--radar-ink);font:600 10.5px Manrope,sans-serif;pointer-events:none}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+@media (prefers-reduced-motion:reduce){.sweep{animation:none;opacity:.5}.blip{animation:none;opacity:.85}}
+/* controls */
+.controls{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px}
+.controls h2{margin-bottom:14px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-size:.88rem;font-weight:600}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.row2{grid-template-columns:1fr}}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible,tr:focus-visible{outline:2px solid var(--lacquer);outline-offset:2px}
+.run{width:100%;margin-top:6px;border:0;border-radius:12px;padding:14px 18px;background:var(--lacquer);color:#fff;font:700 1rem Manrope,sans-serif;cursor:pointer;transition:transform .15s}
+.run:active{transform:scale(.98)}
+.engine-line{margin-top:14px;font-size:.86rem;color:var(--muted)}
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;margin-top:36px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.kpi{padding:16px 14px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi b{display:block;font-family:Unbounded,sans-serif;font-size:1.6rem;font-weight:500}
+.kpi span{font-size:.85rem;color:var(--muted)}
+/* tabs */
+.tabs{display:flex;gap:6px;margin-top:30px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:8px 16px;font:600 .92rem Manrope,sans-serif;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.panel{margin-top:18px}
+.filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:.9rem}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--soft);font-size:.85rem}
+.chip button{border:0;background:none;color:var(--lacquer);cursor:pointer;font:inherit;font-weight:700}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:.92rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.84rem}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--soft)}
+tbody tr.sel{background:var(--soft);box-shadow:inset 3px 0 0 var(--lacquer)}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.8rem;font-weight:600;white-space:nowrap}
+.p-approved{background:color-mix(in srgb,var(--mint) 16%,transparent);color:var(--mint)}
+.p-review{background:color-mix(in srgb,var(--foil) 18%,transparent);color:var(--foil)}
+.p-blocked{background:color-mix(in srgb,var(--lacquer) 16%,transparent);color:var(--lacquer)}
+.lvl-very_high{color:var(--lacquer);font-weight:700}
+.lvl-high{color:var(--foil);font-weight:700}
+.evidence{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.evidence h3{margin-bottom:8px}
+.evidence ul{margin:6px 0 0;padding-left:18px}
+.ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:10px;font-size:.92rem}
+mark{background:color-mix(in srgb,var(--lacquer) 22%,transparent);color:inherit;border-radius:3px;padding:0 2px}
+/* clusters */
+.bar{height:6px;border-radius:3px;background:var(--soft);overflow:hidden;min-width:80px}
+.bar i{display:block;height:100%;background:var(--lacquer)}
+/* pages */
+.pages{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+.page{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.page .slug{font-size:.85rem;color:var(--muted);word-break:break-all}
+.serp{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.serp .t{color:#1a0dab;font-size:1.02rem;line-height:1.3}
+:root[data-theme="dark"] .serp .t{color:#8ab4f8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .serp .t{color:#8ab4f8}}
+.serp .d{font-size:.86rem;color:var(--muted);margin-top:4px}
+.page ul{margin:0;padding-left:18px;font-size:.9rem}
+.page details{font-size:.88rem}
+.page summary{cursor:pointer;font-weight:600}
+pre{white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.78rem;max-height:240px;overflow:auto}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+.btn{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:8px 12px;font:600 .88rem Manrope,sans-serif;cursor:pointer;text-decoration:none}
+.btn.wa{background:#1F7A55;border-color:#1F7A55;color:#fff}
+.score-big{font-family:Unbounded,sans-serif;font-size:1.3rem}
+/* engine */
+.engine{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.eng{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.eng .st{margin:8px 0;font-weight:700}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:20px;font-size:.88rem}
+.flow span{padding:6px 12px;border-radius:999px;background:var(--soft)}
+.flow em{font-style:normal;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Radar salão de beleza</h1>
+    <p class="lede muted">Mostra onde, na Grande Florianópolis, aparecem sinais de gente procurando serviços de beleza e quais páginas criar para que essa procura chegue direto no WhatsApp do salão.</p>
+    <p class="demo-note">Modo demonstração: os sinais abaixo são sintéticos e servem para testar o motor de intenção. Nenhum número aqui é volume real de busca. Os dados reais entram pelo Google Search Console, Google Trends e pelos cliques no WhatsApp das páginas publicadas.</p>
+  </header>
+
+  <section class="top">
+    <div class="radar-box">
+      <div class="radar" id="radar" aria-label="Radar de demanda por bairro">
+        <svg viewBox="0 0 440 440" id="radarSvg"></svg>
+        <div class="sweep"></div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--blip-hot)"></i>Oportunidade alta</span>
+        <span><i style="background:var(--blip-warm)"></i>Média</span>
+        <span><i style="background:var(--blip-cool)"></i>Baixa</span>
+        <span>Posição dos bairros aproximada</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <h2>Configurar radar</h2>
+      <div class="row2">
+        <div class="field"><label for="servico">Serviço</label>
+          <select id="servico"></select></div>
+        <div class="field"><label for="regiao">Região</label>
+          <select id="regiao">
+            <option value="todas">Grande Florianópolis</option>
+            <option value="Florianópolis">Florianópolis</option>
+            <option value="São José">São José</option>
+            <option value="Palhoça">Palhoça</option>
+          </select></div>
+      </div>
+      <div class="field"><label for="salao">Nome do salão</label>
+        <input id="salao" value="Studio Morgana Silveira"></div>
+      <div class="row2">
+        <div class="field"><label for="whats">WhatsApp do salão</label>
+          <input id="whats" inputmode="tel" value="(48) 98501-5443"></div>
+        <div class="field"><label for="dominio">Domínio do site</label>
+          <input id="dominio" value="morganasilveirastudiodebeleza.online"></div>
+      </div>
+      <button class="run" id="run">Executar radar DEMO</button>
+      <p class="engine-line" id="engineLine">Motor de decisão: regras. JEV preparado, aguardando chave.</p>
+    </div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-live="polite"></section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="paginas" aria-selected="true">Páginas SEO/GEO</button>
+    <button class="tab" role="tab" data-tab="clusters" aria-selected="false">Clusters de demanda</button>
+    <button class="tab" role="tab" data-tab="sinais" aria-selected="false">Sinais</button>
+    <button class="tab" role="tab" data-tab="motor" aria-selected="false">Motor e fluxo</button>
+  </nav>
+  <section class="panel" id="panel"></section>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ===== Domínio: salão de beleza, Grande Florianópolis ===== */
+const SERVICOS=[
+ {id:'mechas',nome:'mechas',label:'Mechas e luzes',kw:['mechas','luzes','balayage','morena iluminada']},
+ {id:'unhas',nome:'unhas em gel',label:'Unhas em gel e nail art',kw:['unha','unhas','gel','fibra','nail']},
+ {id:'progressiva',nome:'progressiva',label:'Progressiva e alisamento',kw:['progressiva','alisamento','selagem']},
+ {id:'cilios',nome:'extensão de cílios',label:'Extensão de cílios',kw:['cilios','fio a fio','volume russo']},
+ {id:'sobrancelha',nome:'design de sobrancelha',label:'Design de sobrancelha',kw:['sobrancelha','henna']},
+ {id:'noiva',nome:'penteado de noiva',label:'Noivas e festas',kw:['noiva','madrinha','penteado']},
+ {id:'corte',nome:'corte feminino',label:'Corte feminino',kw:['corte','repicado','chanel']}
+];
+const BAIRROS=[
+ {id:'centro-florianopolis',nome:'Centro',cidade:'Florianópolis',lat:-27.596,lng:-48.549,w:1.3},
+ {id:'trindade',nome:'Trindade',cidade:'Florianópolis',lat:-27.588,lng:-48.522,w:1.0},
+ {id:'agronomica',nome:'Agronômica',cidade:'Florianópolis',lat:-27.576,lng:-48.538,w:.8},
+ {id:'coqueiros',nome:'Coqueiros',cidade:'Florianópolis',lat:-27.606,lng:-48.578,w:.9},
+ {id:'estreito',nome:'Estreito',cidade:'Florianópolis',lat:-27.588,lng:-48.583,w:1.0},
+ {id:'capoeiras',nome:'Capoeiras',cidade:'Florianópolis',lat:-27.597,lng:-48.597,w:.9},
+ {id:'lagoa-da-conceicao',nome:'Lagoa da Conceição',cidade:'Florianópolis',lat:-27.603,lng:-48.468,w:.9},
+ {id:'ingleses',nome:'Ingleses',cidade:'Florianópolis',lat:-27.437,lng:-48.398,w:.9},
+ {id:'campeche',nome:'Campeche',cidade:'Florianópolis',lat:-27.680,lng:-48.486,w:.8},
+ {id:'kobrasol',nome:'Kobrasol',cidade:'São José',lat:-27.592,lng:-48.615,w:1.2},
+ {id:'campinas',nome:'Campinas',cidade:'São José',lat:-27.602,lng:-48.624,w:1.0},
+ {id:'barreiros',nome:'Barreiros',cidade:'São José',lat:-27.571,lng:-48.619,w:.8},
+ {id:'bela-vista',nome:'Bela Vista',cidade:'São José',lat:-27.614,lng:-48.638,w:.8},
+ {id:'centro-palhoca',nome:'Centro de Palhoça',cidade:'Palhoça',lat:-27.645,lng:-48.668,w:.7}
+];
+const SOURCES=['Grupo público de bairro (DEMO)','Fórum local (DEMO)','Perguntas e respostas (DEMO)','Comentário público (DEMO)'];
+const TEMPLATES={
+ urgency:['Preciso fazer {s} pra amanhã, alguém conhece salão no {b} com horário?','Urgente: casamento no sábado e ainda não marquei {s}. Indicação no {b}?','Alguém faz {s} hoje ainda perto do {b}?'],
+ hiring:['Quero agendar {s} essa semana, procuro salão no {b}','Procuro salão bom pra fazer {s} perto do {b}','Onde fazer {s} no {b}? Quero marcar logo'],
+ recommendation:['Alguém indica profissional de {s} no {b}?','Me recomendem um lugar de {s} na região do {b}','Indicação de {s} no {b}, por favor'],
+ price:['Quanto custa {s} em média no {b}?','Qual o valor de {s} nos salões do {b}?','Preço de {s} no {b} tá caro ou é normal?'],
+ comparison:['{S} no {b}: vale a pena pagar mais num salão melhor?','Qual o melhor salão de {s} no {b}?'],
+ problem:['Fiz {s} e deu errado, preciso arrumar. Salão no {b} que conserte?','Meu {s} estragou em uma semana, onde refazer no {b}?'],
+ research:['Como funciona {s}? Quanto tempo dura?','O que é melhor para cuidar depois de {s}?'],
+ negative:['Estou fazendo curso de {s}, alguém sabe de vaga em salão no {b}?','Quero abrir um salão de {s} no {b}, vale a pena?','Tutorial de {s} para fazer em casa','Trabalho da faculdade sobre o mercado de {s}'],
+ pii:['Preciso de {s} no {b}, me chama no (48) 9XXXX-XXXX']
+};
+const INTENT_MIX=[['urgency',.08],['hiring',.2],['recommendation',.2],['price',.17],['comparison',.07],['problem',.06],['research',.09],['negative',.11],['pii',.02]];
+
+/* ===== Rules engine (determinístico) ===== */
+const RULES={
+ urgency:['urgente','amanha','hoje','casamento no sabado','pra sabado'],
+ hiring:['quero agendar','quero marcar','procuro salao','onde fazer','preciso fazer','preciso de'],
+ recommendation:['indica','indicacao','recomend','alguem conhece'],
+ price:['quanto custa','valor','preco','orcamento'],
+ problem:['deu errado','estragou','conserte','refazer','arrumar'],
+ comparison:['vale a pena','melhor salao','comparar'],
+ research:['como funciona','quanto tempo dura','o que e melhor']
+};
+const PRIORITY=['urgency','hiring','recommendation','price','problem','comparison','research'];
+const HARD_NEG=['curso','vaga','abrir um salao','tutorial','fazer em casa','faculdade','mercado de'];
+const BASE_INTENT={urgency:92,hiring:86,recommendation:78,price:70,problem:68,comparison:62,research:30,none:5};
+const BASE_COMM={urgency:92,hiring:90,recommendation:80,price:74,problem:72,comparison:64,research:22,none:2};
+const LABEL={urgency:'Urgência',hiring:'Quer agendar',recommendation:'Pede indicação',price:'Preço',problem:'Problema',comparison:'Comparação',research:'Pesquisa',none:'Sem intenção'};
+const LEVEL_LABEL={very_high:'Muito alta',high:'Alta',medium:'Média',low:'Baixa'};
+const PHONE_RE=/\(?\d{2}\)?\s?9[\dX]{4}-?[\dX]{4}/;
+
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const clamp=(v,a=0,b=100)=>Math.max(a,Math.min(b,v));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slugify=s=>norm(s).replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+
+function hash(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}return h>>>0}
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const pick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+function pickW(r,list){let x=r(),acc=0;for(const[k,w]of list){acc+=w;if(x<=acc)return k}return list[list.length-1][0]}
+
+/* ===== Query Hunter ===== */
+function queryHunter(s,b){
+  return [
+    {query:`salão de ${s.nome} no ${b.nome}`,intentType:'search',commercialWeight:.8},
+    {query:`onde fazer ${s.nome} perto do ${b.nome}`,intentType:'hiring',commercialWeight:.9},
+    {query:`${s.nome} ${b.nome} ${b.cidade}`,intentType:'search',commercialWeight:.7},
+    {query:`quanto custa ${s.nome} em ${b.cidade}`,intentType:'price',commercialWeight:.75},
+    {query:`indicação de ${s.nome} ${b.nome}`,intentType:'recommendation',commercialWeight:.8},
+    {query:`melhor salão de ${s.nome} em ${b.cidade}`,intentType:'comparison',commercialWeight:.65},
+    {query:`${s.nome} hoje ${b.nome}`,intentType:'urgency',commercialWeight:.95}
+  ];
+}
+
+/* ===== Geração de sinais DEMO (seed determinístico) ===== */
+function generateSignals(cfg){
+  const r=rng(hash('radar-salao-v1|'+cfg.servico+'|'+cfg.regiao));
+  const servs=cfg.servico==='todos'?SERVICOS:SERVICOS.filter(s=>s.id===cfg.servico);
+  const bairros=cfg.regiao==='todas'?BAIRROS:BAIRROS.filter(b=>b.cidade===cfg.regiao);
+  const now=Date.now();const out=[];let n=0;
+  for(const s of servs)for(const b of bairros){
+    const hot=r()>.78;
+    const count=Math.round((1+r()*4)*b.w*(hot?2.6:1)*(servs.length===1?2.2:1));
+    for(let i=0;i<count;i++){
+      const kind=pickW(r,INTENT_MIX);
+      let text=pick(r,TEMPLATES[kind]).replaceAll('{S}',s.nome[0].toUpperCase()+s.nome.slice(1)).replaceAll('{s}',s.nome).replaceAll('{b}',b.nome);
+      const day=Math.floor(Math.pow(r(),hot?2.2:1)*14);
+      const hoursAgo=day*24+Math.floor(r()*24);
+      const q=pick(r,queryHunter(s,b));
+      out.push({id:'sig_'+String(++n).padStart(4,'0'),source:pick(r,SOURCES),sourceType:'demo',
+        sourceUrl:`demo://${s.id}/${b.id}/${n}`,capturedAt:new Date(now-hoursAgo*36e5).toISOString(),
+        hoursAgo,day,text,query:q.query,niche:'salao-de-beleza',subNiche:s.id,location:b.id,servico:s,bairro:b});
+    }
+  }
+  return out;
+}
+
+/* ===== Intent engine: RulesEngine ===== */
+function classify(sig){
+  const t=norm(sig.text);
+  const neg=HARD_NEG.filter(p=>t.includes(p));
+  const s=sig.servico,b=sig.bairro;
+  const relHits=[];let rel=0;
+  const kwHit=s.kw.find(k=>t.includes(norm(k)))||(t.includes(norm(s.nome))?s.nome:null);
+  if(kwHit){rel+=50;relHits.push(kwHit)}
+  if(t.includes(norm(b.nome))){rel+=30;relHits.push(b.nome)}
+  if(t.includes('salao')){rel+=20;relHits.push('salão')}
+  if(neg.length){
+    return {intentDetected:false,intentType:'none',intentScore:BASE_INTENT.none,commercialScore:BASE_COMM.none,urgencyScore:0,
+      relevanceScore:clamp(rel),confidence:.85,evidence:neg,
+      reasoning:['Contém padrão de não-compra (estudo, trabalho, vaga ou abrir negócio). Tratado como falso positivo evitado.'],engine:'rules',modelVersion:'rules-salao-0.1'};
+  }
+  const hits={};let total=0;
+  for(const k of PRIORITY){const m=RULES[k].filter(p=>t.includes(p));if(m.length){hits[k]=m;total+=m.length}}
+  const type=PRIORITY.find(k=>hits[k])||'none';
+  const evidence=Object.values(hits).flat();
+  const reasoning=type==='none'?['Nenhum padrão de intenção encontrado.']
+    :[`Intenção principal: ${LABEL[type].toLowerCase()} (padrão "${hits[type][0]}").`]
+      .concat(Object.keys(hits).filter(k=>k!==type).map(k=>`Reforço: ${LABEL[k].toLowerCase()}.`));
+  return {intentDetected:type!=='none',intentType:type,
+    intentScore:clamp(BASE_INTENT[type]+4*Math.max(0,total-1)),
+    commercialScore:clamp(BASE_COMM[type]+(hits.urgency&&type!=='urgency'?6:0)),
+    urgencyScore:hits.urgency?90:20,relevanceScore:clamp(rel),
+    confidence:type==='none'?.4:Math.min(.95,.55+.1*total),
+    evidence:evidence.concat(relHits.map(x=>x)),reasoning,engine:'rules',modelVersion:'rules-salao-0.1'};
+}
+
+/* ===== Compliance gate ===== */
+function compliance(sig,a){
+  if(PHONE_RE.test(sig.text))return{status:'blocked',reason:'Texto contém telefone. Sinal descartado para não guardar dado pessoal.',warnings:['PII detectada']};
+  if(a.confidence<.55)return{status:'review',reason:'Confiança baixa. Vai para revisão humana.',warnings:[]};
+  return{status:'approved',reason:'Fonte pública de demonstração, sem dado pessoal armazenado.',warnings:[]};
+}
+
+/* ===== Lead scoring (fórmula do PROJECT.md) ===== */
+function score(sig,a){
+  const recency=clamp(100-sig.hoursAgo*.3);
+  const overall=Math.round(a.intentScore*.30+a.commercialScore*.25+recency*.15+a.relevanceScore*.20+a.confidence*100*.10);
+  const level=overall>=80?'very_high':overall>=60?'high':overall>=30?'medium':'low';
+  return{recencyScore:Math.round(recency),overallScore:overall,intentLevel:level};
+}
+
+/* ===== Opportunity engine ===== */
+function buildClusters(rows){
+  const map=new Map();
+  for(const r of rows){
+    if(r.comp.status!=='approved'||!r.a.intentDetected||r.a.intentType==='research')continue;
+    const key=r.sig.subNiche+'|'+r.sig.location;
+    if(!map.has(key))map.set(key,{id:key,servico:r.sig.servico,bairro:r.sig.bairro,rows:[]});
+    map.get(key).rows.push(r);
+  }
+  const list=[...map.values()];
+  const maxCount=Math.max(1,...list.map(c=>c.rows.length));
+  for(const c of list){
+    const R=c.rows,n=R.length;
+    const high=R.filter(x=>x.sc.intentLevel==='high').length,vhigh=R.filter(x=>x.sc.intentLevel==='very_high').length;
+    const avg=f=>R.reduce((s,x)=>s+f(x),0)/n;
+    const recent=R.filter(x=>x.sig.day<7).length,prev=n-recent;
+    const growth=(recent-prev)/Math.max(prev,1);
+    const trendScore=clamp(50+growth*40);
+    const density=(high+vhigh)/n*100;
+    const geo=n/maxCount*100;
+    const recency=avg(x=>x.sc.recencyScore);
+    const opp=Math.round(density*.30+avg(x=>x.a.commercialScore)*.25+trendScore*.20+recency*.10+geo*.10+avg(x=>x.a.confidence)*100*.05);
+    const intents={};R.forEach(x=>intents[x.a.intentType]=(intents[x.a.intentType]||0)+1);
+    Object.assign(c,{signalCount:n,highIntentCount:high,veryHighIntentCount:vhigh,averageIntentScore:Math.round(avg(x=>x.a.intentScore)),
+      averageCommercialScore:Math.round(avg(x=>x.a.commercialScore)),growthPct:Math.round(growth*100),trendScore:Math.round(trendScore),
+      opportunityScore:opp,topIntents:Object.entries(intents).sort((a,b)=>b[1]-a[1]).map(e=>e[0])});
+  }
+  return list.sort((a,b)=>b.opportunityScore-a.opportunityScore);
+}
+
+/* ===== Plano de página SEO/GEO + WhatsApp ===== */
+function waNumber(raw){let d=raw.replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;return d}
+function buildPage(c,cfg){
+  const s=c.servico,b=c.bairro;
+  const slug='/'+slugify(s.nome+' '+b.nome+' '+b.cidade);
+  const ref=('R'+hash(c.id).toString(36)).toUpperCase().slice(0,7);
+  const msg=`Olá! Vi a página de ${s.label.toLowerCase()} no ${b.nome} e quero agendar um horário. [${ref}]`;
+  const wa=`https://wa.me/${waNumber(cfg.whats)}?text=${encodeURIComponent(msg)}`;
+  const title=`${s.label} no ${b.nome}, ${b.cidade} | ${cfg.salao}`;
+  const meta=`${s.label} para quem está no ${b.nome} e região. Veja fotos de trabalhos reais e agende seu horário direto pelo WhatsApp.`;
+  const queries=queryHunter(s,b).sort((x,y)=>y.commercialWeight-x.commercialWeight).slice(0,5).map(q=>q.query);
+  const faq=[
+    {q:`Quanto custa ${s.nome} no ${b.nome}?`,a:'[Preencher com a faixa de preço real do salão e o que está incluso.]'},
+    {q:`Quanto tempo leva ${s.nome}?`,a:'[Preencher com a duração média do atendimento.]'},
+    {q:`O ${cfg.salao} atende quem mora no ${b.nome}?`,a:`[Preencher com a distância ou tempo de deslocamento até o salão.] O agendamento é feito pelo WhatsApp.`},
+    {q:`Dá para agendar ${s.nome} para hoje ou amanhã?`,a:'[Preencher com a política de encaixe e horários.]'}
+  ];
+  const url=`https://${cfg.dominio.replace(/^https?:\/\//,'').replace(/\/$/,'')}${slug}`;
+  const jsonld=[{"@context":"https://schema.org","@type":"BeautySalon","name":cfg.salao,"telephone":"+"+waNumber(cfg.whats),"url":url,
+      "areaServed":{"@type":"Place","name":`${b.nome}, ${b.cidade} - SC`},
+      "makesOffer":{"@type":"Offer","itemOffered":{"@type":"Service","name":s.label}}},
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":faq.map(f=>({"@type":"Question","name":f.q,"acceptedAnswer":{"@type":"Answer","text":f.a}}))}];
+  return{clusterId:c.id,slug,url,ref,title,meta,h1:`${s.label} no ${b.nome}`,queries,faq,whatsappLink:wa,whatsappMessage:msg,jsonld,opportunityScore:c.opportunityScore};
+}
+
+/* ===== Estado e pipeline ===== */
+const state={tab:'paginas',rows:[],clusters:[],pages:[],cfg:null,selected:null,bairroFilter:null,intentFilter:'todas'};
+const $=id=>document.getElementById(id);
+$('servico').innerHTML='<option value="todos">Todos os serviços</option>'+SERVICOS.map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
+
+function runPipeline(){
+  const cfg={servico:$('servico').value,regiao:$('regiao').value,salao:$('salao').value.trim()||'Seu salão',whats:$('whats').value,dominio:$('dominio').value.trim()||'seudominio.com.br'};
+  const signals=generateSignals(cfg);
+  const rows=signals.map(sig=>{const a=classify(sig);const comp=compliance(sig,a);const sc=score(sig,a);return{sig,a,comp,sc}});
+  const clusters=buildClusters(rows);
+  state.cfg=cfg;state.rows=rows;state.clusters=clusters;state.pages=clusters.slice(0,6).map(c=>buildPage(c,cfg));
+  state.selected=null;state.bairroFilter=null;
+  renderRadar();renderKpis();renderPanel();
+}
+
+/* ===== Render: radar ===== */
+function project(b){return{x:220+(b.lng+48.53)/.2*200,y:220-(b.lat+27.565)/.2*200}}
+function renderRadar(){
+  const svg=$('radarSvg');let h='';
+  for(const r of [55,110,165,210])h+=`<circle cx="220" cy="220" r="${r}" fill="none" stroke="rgba(246,231,238,.12)"/>`;
+  h+=`<line x1="220" y1="10" x2="220" y2="430" stroke="rgba(246,231,238,.08)"/><line x1="10" y1="220" x2="430" y2="220" stroke="rgba(246,231,238,.08)"/>`;
+  const agg=new Map();
+  for(const c of state.clusters){const k=c.bairro.id;if(!agg.has(k))agg.set(k,{b:c.bairro,n:0,opp:0});const g=agg.get(k);g.n+=c.signalCount;g.opp=Math.max(g.opp,c.opportunityScore)}
+  const items=[...agg.values()].sort((a,b)=>b.opp-a.opp);
+  const top=new Set(items.slice(0,5).map(i=>i.b.id));
+  for(const g of items){
+    const p=project(g.b);const dx=p.x-220,dy=p.y-220;
+    let ang=Math.atan2(dx,-dy)*180/Math.PI;if(ang<0)ang+=360;
+    const rad=4+Math.sqrt(g.n)*2.1;
+    const col=g.opp>=70?'var(--blip-hot)':g.opp>=55?'var(--blip-warm)':'var(--blip-cool)';
+    h+=`<circle class="blip" tabindex="0" role="button" aria-label="${esc(g.b.nome)}: ${g.n} sinais, oportunidade ${g.opp}" data-b="${g.b.id}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${rad.toFixed(1)}" fill="${col}" style="animation-delay:${(ang/360*6).toFixed(2)}s"/>`;
+    if(top.has(g.b.id))h+=`<text class="radar-label" x="${(p.x+rad+4).toFixed(1)}" y="${(p.y+4).toFixed(1)}">${esc(g.b.nome)}</text>`;
+  }
+  svg.innerHTML=h;
+  svg.querySelectorAll('.blip').forEach(el=>{
+    const go=()=>{state.bairroFilter=el.dataset.b;setTab('sinais')};
+    el.addEventListener('click',go);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}});
+  });
+}
+
+/* ===== Render: KPIs ===== */
+function renderKpis(){
+  const R=state.rows;const ok=R.filter(r=>r.comp.status==='approved'&&r.a.intentDetected);
+  const hi=ok.filter(r=>r.sc.intentLevel==='high'||r.sc.intentLevel==='very_high').length;
+  const avg=ok.length?Math.round(ok.reduce((s,r)=>s+r.sc.overallScore,0)/ok.length):0;
+  const blocked=R.filter(r=>r.comp.status!=='approved').length;
+  const k=[[R.length,'Sinais analisados'],[hi,'Alta ou muito alta intenção'],[avg,'Score médio'],[blocked,'Barrados ou em revisão'],[state.clusters.length,'Clusters de demanda'],[state.pages.length,'Páginas sugeridas']];
+  $('kpis').innerHTML=k.map(([v,l])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
+}
+
+/* ===== Render: abas ===== */
+function setTab(t){state.tab=t;document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));renderPanel()}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.tab!=='sinais')state.bairroFilter=null;setTab(b.dataset.tab)}));
+
+function renderPanel(){
+  const p=$('panel');
+  if(!state.rows.length){p.innerHTML='<div class="empty">Configure o radar e clique em Executar radar DEMO.</div>';return}
+  ({paginas:renderPages,clusters:renderClusters,sinais:renderSignals,motor:renderEngine})[state.tab](p);
+}
+
+function renderPages(p){
+  if(!state.pages.length){p.innerHTML='<div class="empty">Nenhum cluster aprovado nesta seleção. Troque o serviço ou a região.</div>';return}
+  p.innerHTML=`<div class="filterbar"><span class="muted">As 6 combinações serviço + bairro com maior oportunidade viram páginas. Cada página leva o visitante ao WhatsApp com um código de origem para medir de onde veio o lead.</span>
+    <button class="btn" id="copyAll">Copiar plano completo (JSON)</button></div>
+  <div class="pages">${state.pages.map((pg,i)=>`
+    <article class="page">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline"><h2>${esc(pg.h1)}</h2><span class="score-big" title="Opportunity score">${pg.opportunityScore}</span></div>
+      <div class="slug">${esc(pg.url)}</div>
+      <div class="serp"><div class="t">${esc(pg.title)}</div><div class="d">${esc(pg.meta)}</div></div>
+      <div><h3>Buscas que a página deve responder</h3><ul>${pg.queries.map(q=>`<li>${esc(q)}</li>`).join('')}</ul></div>
+      <details><summary>FAQ para GEO (respostas que IAs citam)</summary><ul>${pg.faq.map(f=>`<li><b>${esc(f.q)}</b><br>${esc(f.a)}</li>`).join('')}</ul></details>
+      <details><summary>Schema JSON-LD</summary><pre>${esc(JSON.stringify(pg.jsonld,null,2))}</pre></details>
+      <div class="actions">
+        <a class="btn wa" href="${esc(pg.whatsappLink)}" target="_blank" rel="noopener">Testar botão WhatsApp</a>
+        <button class="btn" data-copy="${i}" data-what="wa">Copiar link</button>
+        <button class="btn" data-copy="${i}" data-what="ld">Copiar JSON-LD</button>
+      </div>
+    </article>`).join('')}</div>`;
+  $('copyAll').onclick=()=>copy(JSON.stringify({salao:state.cfg.salao,dominio:state.cfg.dominio,geradoEm:new Date().toISOString(),modo:'DEMO',paginas:state.pages},null,2),'Plano copiado');
+  p.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{const pg=state.pages[+b.dataset.copy];
+    b.dataset.what==='wa'?copy(pg.whatsappLink,'Link copiado'):copy(`<script type="application/ld+json">\n${JSON.stringify(pg.jsonld,null,2)}\n<\/script>`,'JSON-LD copiado')});
+}
+
+function renderClusters(p){
+  if(!state.clusters.length){p.innerHTML='<div class="empty">Nenhum cluster nesta seleção.</div>';return}
+  p.innerHTML=`<div class="filterbar muted">Crescimento compara os sinais DEMO dos últimos 7 dias com os 7 anteriores. Não representa crescimento de mercado.</div>
+  <div class="tbl-wrap"><table><thead><tr><th>Serviço</th><th>Bairro</th><th>Sinais</th><th>Alta + muito alta</th><th>Intenções mais comuns</th><th>Sinais vs semana anterior</th><th>Oportunidade</th></tr></thead><tbody>
+  ${state.clusters.map(c=>`<tr data-b="${c.bairro.id}"><td>${esc(c.servico.label)}</td><td>${esc(c.bairro.nome)}<br><span class="muted">${esc(c.bairro.cidade)}</span></td>
+    <td>${c.signalCount}</td><td>${c.highIntentCount+c.veryHighIntentCount}</td><td>${c.topIntents.slice(0,2).map(t=>LABEL[t]).join(', ')}</td>
+    <td>${c.growthPct>0?'+':''}${c.growthPct}%</td>
+    <td><div style="display:flex;gap:8px;align-items:center"><b>${c.opportunityScore}</b><div class="bar" style="flex:1"><i style="width:${c.opportunityScore}%"></i></div></div></td></tr>`).join('')}
+  </tbody></table></div>`;
+  p.querySelectorAll('tbody tr').forEach(tr=>tr.onclick=()=>{state.bairroFilter=tr.dataset.b;setTab('sinais')});
+}
+
+function renderSignals(p){
+  let R=state.rows.slice();
+  if(state.bairroFilter)R=R.filter(r=>r.sig.location===state.bairroFilter);
+  if(state.intentFilter!=='todas')R=R.filter(r=>r.a.intentType===state.intentFilter);
+  R.sort((a,b)=>b.sc.overallScore-a.sc.overallScore);
+  const shown=R.slice(0,80);
+  const bName=state.bairroFilter?BAIRROS.find(b=>b.id===state.bairroFilter).nome:null;
+  p.innerHTML=`<div class="filterbar">
+    <label for="ifil">Intenção</label>
+    <select id="ifil" style="width:auto"><option value="todas">Todas</option>${Object.keys(LABEL).map(k=>`<option value="${k}" ${state.intentFilter===k?'selected':''}>${LABEL[k]}</option>`).join('')}</select>
+    ${bName?`<span class="chip">Bairro: ${esc(bName)} <button aria-label="Remover filtro" id="clrB">×</button></span>`:''}
+    <span class="muted">${R.length} sinais${R.length>80?', mostrando os 80 de maior score':''}. Clique numa linha para ver o porquê.</span></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Fonte</th><th>Texto</th><th>Intenção</th><th>Score</th><th>Confiança</th><th>Compliance</th></tr></thead><tbody>
+  ${shown.map(r=>`<tr tabindex="0" data-id="${r.sig.id}" class="${state.selected===r.sig.id?'sel':''}">
+    <td>${esc(r.sig.source)}<br><span class="muted">${esc(r.sig.bairro.nome)}</span></td><td>${esc(r.sig.text)}</td>
+    <td>${LABEL[r.a.intentType]}</td><td class="lvl-${r.sc.intentLevel}">${r.sc.overallScore}<br><span class="muted" style="font-weight:400">${LEVEL_LABEL[r.sc.intentLevel]}</span></td>
+    <td>${Math.round(r.a.confidence*100)}%</td>
+    <td><span class="pill p-${r.comp.status}">${{approved:'Aprovado',review:'Revisão',blocked:'Bloqueado'}[r.comp.status]}</span></td></tr>`).join('')}
+  </tbody></table></div><div id="ev"></div>`;
+  $('ifil').onchange=e=>{state.intentFilter=e.target.value;renderPanel()};
+  if($('clrB'))$('clrB').onclick=()=>{state.bairroFilter=null;renderPanel()};
+  p.querySelectorAll('tbody tr').forEach(tr=>{const go=()=>{state.selected=tr.dataset.id;renderPanel();$('ev').scrollIntoView({behavior:'smooth',block:'nearest'})};
+    tr.onclick=go;tr.onkeydown=e=>{if(e.key==='Enter')go()}});
+  if(state.selected){const r=state.rows.find(x=>x.sig.id===state.selected);if(r)renderEvidence(r)}
+}
+
+function highlight(text,terms){
+  let out=esc(text);
+  for(const t of [...new Set(terms)].sort((a,b)=>b.length-a.length)){
+    const n=norm(text);const idx=n.indexOf(norm(t));if(idx<0)continue;
+    const orig=text.substr(idx,t.length);out=out.replace(esc(orig),`<mark>${esc(orig)}</mark>`);
+  }
+  return out;
+}
+function renderEvidence(r){
+  $('ev').innerHTML=`<div class="evidence"><h3>Por que este sinal foi classificado assim</h3>
+    <p style="margin-top:6px">"${highlight(r.sig.text,r.a.evidence)}"</p>
+    <div class="ev-grid">
+      <div><b>Raciocínio</b><ul>${r.a.reasoning.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div><b>Scores</b><ul><li>Intenção ${r.a.intentScore}</li><li>Comercial ${r.a.commercialScore}</li><li>Relevância ${r.a.relevanceScore}</li><li>Recência ${r.sc.recencyScore}</li><li>Urgência ${r.a.urgencyScore}</li></ul></div>
+      <div><b>Compliance</b><p style="margin-top:6px">${esc(r.comp.reason)}</p></div>
+      <div><b>Origem</b><p style="margin-top:6px" class="muted">${esc(r.sig.source)}<br>Consulta: ${esc(r.sig.query)}<br>Motor: ${r.a.engine} (${r.a.modelVersion})</p></div>
+    </div>
+    <p class="muted" style="margin-top:12px;font-size:.88rem">O sistema classificou este sinal como ${LEVEL_LABEL[r.sc.intentLevel].toLowerCase()} intenção com confiança de ${Math.round(r.a.confidence*100)}%. É uma inferência, não uma confirmação de compra.</p></div>`;
+}
+
+function renderEngine(p){
+  p.innerHTML=`<div class="engine">
+    <div class="eng"><h3>Regras</h3><p class="st" style="color:var(--mint)">Ativo</p><p class="muted">Determinístico e testável. ${Object.values(RULES).flat().length} padrões de intenção e ${HARD_NEG.length} bloqueios de falso positivo para o nicho de beleza.</p></div>
+    <div class="eng"><h3>JEV (TypeSafe)</h3><p class="st" style="color:var(--foil)">Preparado, sem chave</p><p class="muted">Vai decidir quais serviço + bairro viram página e repontuar leads com saída tipada. Enquanto a chave não chega, as regras respondem no lugar.</p></div>
+    <div class="eng"><h3>Laya</h3><p class="st muted">Não configurado</p><p class="muted">Entra depois do Evaluation Lab, comparado contra as regras no mesmo conjunto de casos.</p></div>
+    <div class="eng"><h3>Fallback</h3><p class="st">Regras</p><p class="muted">Se JEV ou Laya falharem, o pipeline continua com as regras e registra o fallback.</p></div>
+  </div>
+  <h2 style="margin-top:28px">Fluxo até o WhatsApp</h2>
+  <div class="flow"><span>Radar detecta demanda</span><em>›</em><span>JEV escolhe serviço + bairro</span><em>›</em><span>Página SEO/GEO publicada</span><em>›</em><span>Pessoa busca no Google ou pergunta a uma IA</span><em>›</em><span>Clica no WhatsApp com código de origem</span><em>›</em><span>Lead com consentimento no Supabase</span><em>›</em><span>Search Console realimenta o radar</span></div>
+  <p class="muted" style="margin-top:16px;max-width:72ch">O lead só existe quando a pessoa chama no WhatsApp. Ninguém recebe mensagem sem ter pedido, o que protege o número do salão de banimento e mantém tudo dentro da LGPD.</p>`;
+}
+
+/* ===== Utilitários ===== */
+let toastT;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1600)}
+async function copy(text,msg){
+  try{await navigator.clipboard.writeText(text);toast(msg)}
+  catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast(msg)}catch(_){toast('Não foi possível copiar')}ta.remove()}
+}
+$('run').addEventListener('click',runPipeline);
+runPipeline();
+</script>
+</body>
+</html>

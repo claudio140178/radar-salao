@@ -1,0 +1,8 @@
+# Nunca subir chaves ou dados de clientes
+*.json
+!package.json
+.env
+.env.*
+*.csv
+gsc-key*
+relatorio.txt
